@@ -169,49 +169,70 @@ def shadow_blurs(value):
             yield to_px(number, unit)
 
 
-def scan_line(line):
-    """Return (category, snippet) for every tell on one line."""
-    found = []
+def regex_tell(category, pattern, group=0):
+    """A checker for a tell that one regular expression finds outright.
 
-    for pattern in (FONT_PATTERN, FONT_IMPORT_PATTERN, TAILWIND_FONT_PATTERN):
+    Most tells are this simple. The ones below that measure something, such
+    as a colour's warmth or a corner's size, are written out by hand.
+    """
+    def check(line):
         for match in pattern.finditer(line):
-            found.append(("font", match.group(1)))
+            yield category, match.group(group)
+    return check
 
+
+def beige_colours(line):
     for snippet, rgb in colours_in(line):
         if is_beige(*rgb):
-            found.append(("beige", snippet))
-    for match in BEIGE_NAME_PATTERN.finditer(line):
-        found.append(("beige", match.group(1)))
-    for match in TAILWIND_BEIGE_PATTERN.finditer(line):
-        found.append(("beige", match.group(0)))
+            yield "beige", snippet
 
+
+def large_radii(line):
     for match in RADIUS_PATTERN.finditer(line):
         value = match.group(1).strip()
         lengths = [to_px(v, u) for v, u in LENGTH_PATTERN.findall(value)]
         if any(px >= LARGE_RADIUS_PX for px in lengths):
-            found.append(("radius", match.group(0).strip()[:60]))
-    for match in TAILWIND_RADIUS_PATTERN.finditer(line):
-        found.append(("radius", match.group(0)))
+            yield "radius", match.group(0).strip()[:60]
 
+
+def purple_gradients(line):
     for match in GRADIENT_PATTERN.finditer(line):
         if any(is_purple(*rgb) for _, rgb in colours_in(match.group(1))):
-            found.append(("gradient", match.group(0)[:60]))
-    for match in TAILWIND_GRADIENT_PATTERN.finditer(line):
-        found.append(("gradient", match.group(0)))
+            yield "gradient", match.group(0)[:60]
 
+
+def soft_shadows(line):
     for match in SHADOW_PATTERN.finditer(line):
         value = match.group(1).strip()
         if any(blur >= LARGE_BLUR_PX for blur in shadow_blurs(value)):
-            found.append(("shadow", "box-shadow: " + value[:50]))
-    for match in TAILWIND_SHADOW_PATTERN.finditer(line):
-        found.append(("shadow", match.group(0)))
+            yield "shadow", "box-shadow: " + value[:50]
 
-    for match in GLASS_PATTERN.finditer(line):
-        found.append(("glass", match.group(0)))
 
-    for match in COPY_PATTERN.finditer(line):
-        found.append(("copy", match.group(0)))
+# Every checker, in the order their findings are reported within a line. A
+# new tell is a regex_tell here, or a function above if it has to measure.
+CHECKS = [
+    regex_tell("font", FONT_PATTERN, 1),
+    regex_tell("font", FONT_IMPORT_PATTERN, 1),
+    regex_tell("font", TAILWIND_FONT_PATTERN, 1),
+    beige_colours,
+    regex_tell("beige", BEIGE_NAME_PATTERN, 1),
+    regex_tell("beige", TAILWIND_BEIGE_PATTERN),
+    large_radii,
+    regex_tell("radius", TAILWIND_RADIUS_PATTERN),
+    purple_gradients,
+    regex_tell("gradient", TAILWIND_GRADIENT_PATTERN),
+    soft_shadows,
+    regex_tell("shadow", TAILWIND_SHADOW_PATTERN),
+    regex_tell("glass", GLASS_PATTERN),
+    regex_tell("copy", COPY_PATTERN),
+]
 
+
+def scan_line(line):
+    """Return (category, snippet) for every tell on one line."""
+    found = []
+    for check in CHECKS:
+        found.extend(check(line))
     return found
 
 
