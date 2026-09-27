@@ -6,7 +6,7 @@
     {
       "name": "ooer-design",
       "source": "./",
-      "description": "Find the stereotypical 'AI design' look in a website, then preview, approve and apply the fixes."
+      "description": "Find the stereotypical 'AI design' look in a website, fix it with previews you approve, and check accessibility and launch hygiene against the Preflight Checklist."
     }
   ]
 }

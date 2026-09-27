@@ -1,9 +1,9 @@
 {
   "name": "ooer-design",
   "displayName": "Ooer Design",
-  "version": "0.3.0",
-  "description": "Polish a website's design by finding and replacing the stereotypical 'AI design' look: beige and cream palettes, Inter everywhere, big rounded corners, purple gradients and soft shadows. Audit with polish; preview, approve and apply the fixes with redesign.",
+  "version": "0.4.0",
+  "description": "Polish a website so it stops looking AI-generated, and check it before launch. polish audits for the tells of generated design; redesign previews, approves and applies the fixes; preflight checks accessibility and launch hygiene against the Preflight Checklist and hands back its results.",
   "author": { "name": "Christopher Neale" },
   "license": "UNLICENSED",
-  "keywords": ["design", "css", "tailwind", "typography", "polish"]
+  "keywords": ["design", "css", "tailwind", "typography", "polish", "accessibility", "wcag", "preflight"]
 }

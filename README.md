@@ -14,11 +14,12 @@ finding through a review page you approve first.
 
 ## Use
 
-The plugin has two skills. Run them in a website project:
+The plugin has three skills. Run them in a website project:
 
 ```
 /ooer-design:polish
 /ooer-design:redesign
+/ooer-design:preflight http://localhost:4321
 ```
 
 - **`polish`** audits the site, proposes a direction and applies it.
@@ -31,6 +32,12 @@ The plugin has two skills. Run them in a website project:
   approve. Only after that does it edit the site's real source, which
   includes the files that generated tokens are built from. What you chose to
   keep is recorded in `.ooer-design.json`, so it stops coming back.
+
+- **`preflight`** checks accessibility and launch hygiene against the
+  [Preflight Checklist](https://onion2k.github.io/preflight/). It runs every
+  check an agent can settle against a URL, records what it observed, and
+  hands back a report, the checklist's results JSON and a share link that
+  opens the checklist with the run loaded.
 
 The scanner works on its own too, without Claude:
 
@@ -69,6 +76,27 @@ A site can have a `.ooer-design.json` at its root, which the scanner reads:
 and `review.html`. It needs the site's dev server running and Playwright
 installed in the site. It uses the site's own copy, so the plugin carries no
 browser.
+
+### Preflight
+
+`skills/preflight/preflight.mjs` takes a URL and an output folder:
+
+```bash
+node skills/preflight/preflight.mjs https://example.com --out run
+node skills/preflight/preflight.mjs http://localhost:4321 --out run --project path/to/site
+```
+
+- It follows the checklist's own rules. A `human` check is never recorded,
+  evidence is what was observed, and a fail is never presented as done.
+- A check is settled only when the target can answer it. Security headers,
+  TLS, DNS and error pages are facts about production; page weight, the
+  request chain and the sitemap are facts about the build, so a dev server
+  is not asked for them.
+- It needs Playwright in the site. `@axe-core/playwright` adds the automated
+  scan and contrast, and `lighthouse` adds the two Lighthouse checks; without
+  them those checks are left outstanding and the report says how to add them.
+- The checks are read live from the checklist's `checks.json`, with a
+  vendored copy in `skills/preflight/checks.json` for working offline.
 
 ## Install
 

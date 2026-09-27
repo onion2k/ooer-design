@@ -1,9 +1,12 @@
 # ooer-design
 
-This is a Claude Code plugin with two skills. `polish` audits a website for
+This is a Claude Code plugin with three skills. `polish` audits a website for
 the stereotypical "AI design" look and applies a direction. `redesign`
 previews a fix for every finding, has the user approve them on one review
-page, and applies them at the real source. The directory is also a local
+page, and applies them at the real source. `preflight` checks accessibility
+and launch hygiene against the Preflight Checklist at
+https://onion2k.github.io/preflight/ (source in `~/projects/preflight`) and
+hands results back in that checklist's shape. The directory is also a local
 marketplace called `ooer`, so it can be installed with
 `claude plugin install ooer-design@ooer`.
 
@@ -15,11 +18,18 @@ marketplace called `ooer`, so it can be installed with
     tells, `test_visual.py` for the rest, `test_content.py` for the content
     tells and the slop fixture) and the decisions file (`test_config.py`).
   - The Node tests hold the proposals file, the review page, and the preview
-    script's arguments.
+    script's arguments (`review.test.mjs`, `preview.test.mjs`), and the
+    preflight skill's page discovery, rules, results and arguments
+    (`preflight.test.mjs`).
   - Mutation checks are run by putting each bug back in turn; the runner
     must disable bytecode caching (`python3 -B`, and remove `__pycache__`),
     because a same-size edit within the same second is otherwise run against
     the stale compiled copy.
+- **Preflight by hand:** serve the fixture with
+  `python3 -m http.server 8765 --bind 127.0.0.1` in `tests/fixtures/slop`,
+  then `node skills/preflight/preflight.mjs http://127.0.0.1:8765/ --out <folder> --project <a site with Playwright>`.
+  The fixture should fail about eighteen checks; Humanity's dev server about
+  five, every one a real fact about the site.
 - **Calibration:** `python3 skills/polish/scan.py tests/fixtures/slop` should
   light up nearly every category (it is a synthetic generated landing page);
   a considered site such as `~/projects/humanity` should give a handful of
@@ -44,8 +54,22 @@ marketplace called `ooer`, so it can be installed with
   the review page. It is pure, with no browser and no file access.
 - `skills/redesign/preview.mjs` takes the pictures. It uses the site's own
   Playwright in a fresh context, then hands the results to `review.mjs`.
-- `skills/polish/SKILL.md` and `skills/redesign/SKILL.md` present these
-  tools. They hold the workflows Claude follows, and they call the scripts
+- `skills/preflight/rules.mjs` is one pure rule per check an agent may
+  settle: it takes what was observed and returns a verdict with evidence, a
+  null status with evidence for a shared check that only gathers, or null
+  when the check could not be run. `PRODUCTION_ONLY` and `BUILD_ONLY` name the
+  checks a local build or a dev server cannot answer.
+- `skills/preflight/results.mjs` holds the checklist's rules (no human
+  check recorded, evidence required, a fail stays a fail), the results blob,
+  the share link and the report. `skills/preflight/discover.mjs` finds pages
+  and tells production, a local build and a dev server apart.
+- `skills/preflight/preflight.mjs` is the orchestrator: plain requests, the
+  site's own Playwright, axe and Lighthouse where the site has them.
+- `skills/preflight/checks.json` is a vendored copy of the checklist's data,
+  the offline fallback. Refresh it from `~/projects/preflight/checks.json`;
+  never edit it.
+- `skills/polish/SKILL.md`, `skills/redesign/SKILL.md` and
+  `skills/preflight/SKILL.md` present these tools. They hold the workflows Claude follows, and they call the scripts
   through `${CLAUDE_PLUGIN_ROOT}`.
 - `skills/polish/tells.md` is the content: the catalogue of tells and what
   to do instead.
@@ -75,6 +99,13 @@ marketplace called `ooer`, so it can be installed with
 - **Redesign:** `checkProposals`, `pictureSets`, `pictureName`, `hiddenCss`
   and `renderReview(proposals, folder, unchanged)` come from `review.mjs`.
   `parseArgs` and `findPlaywright` come from `preview.mjs`.
+- **Preflight:** `RULES[id](ctx)` from `rules.mjs`, where `ctx` is a plain
+  object of observations (`pages`, `home`, `headers`, `files`, `axe` and so
+  on) that a test builds by hand; `settle`, `blob`, `encodeLink`,
+  `decodeLink`, `loadChecks` and `renderReport` from `results.mjs`;
+  `sitemapUrls`, `internalLinks`, `templatePages`, `isLocalTarget` and
+  `isDevServer` from `discover.mjs`; `parseArgs` and `whyNot` from
+  `preflight.mjs`.
 - **Pictures:** these need a real dev server. They are checked by running
   `preview.mjs` against one and looking at what it writes, which no
   automated test does.
@@ -106,6 +137,20 @@ For a change to the redesign tools:
 - site text containing HTML;
 - the site's files are never written, apart from `.ooer-design.json` by the
   skill, after approval.
+
+For a change to the preflight skill:
+
+- every rule's id is in `checks.json` and is not a `human` check;
+- the rule is tested both ways, and returns null rather than a verdict when
+  what it needs was not observed;
+- a fact about production is in `PRODUCTION_ONLY`, a fact about the build in
+  `BUILD_ONLY`, and neither is recorded from a target that cannot answer it;
+- evidence is the observed value, on one line, singular for one;
+- a shared check whose recipe only gathers evidence is not recorded;
+- the share link still opens in the live checklist and imports every result
+  (run the fixture, then open the link headless and read `localStorage`);
+- a missing server, Playwright, Chromium, axe or Lighthouse gives a plain
+  message or a plain reason in the report, never a stack trace.
 
 ## The gates and their baselines
 
