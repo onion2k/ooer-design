@@ -39,10 +39,23 @@ python3 "${CLAUDE_PLUGIN_ROOT}/skills/polish/scan.py" <path>
 ```
 
 Add `--json` if you want to sort or count the findings. The scanner finds
-what can be grepped. Then read [tells.md](tells.md) and look for the tells it
-cannot see, which are layout and composition tells, in the markup and in the
-running page. The pill badge over a centred hero, the three-card feature grid
-with an icon in a tinted circle, and gradient text are examples.
+what can be grepped, in some thirty categories: the visual tells (fonts,
+palettes, radii, gradients, shadows, glows, glass, backdrops, template
+chrome, the card kit, icons, emoji, display type, layout, motion, dark mode,
+imagery), the fingerprints of generators and starters, and the content tells
+(placeholders, dead links, fake testimonials, fabricated statistics, generic
+calls to action, stock headings, generated-sounding phrases). Two things are
+counted over a whole file and reported once: a buzzword cluster of four or
+more distinct marketing words, and five or more em dashes. One is counted
+over the whole site: animation with no reduced-motion guard anywhere.
+
+Read the report the way the sources behind it say to: no single finding is
+proof, and density is the signal. A purple button is a colour; a purple
+gradient button under a pill badge over three icon cards is a template. Then
+read [tells.md](tells.md) and look for the tells the scanner cannot see,
+which are layout and composition tells, in the markup and in the running
+page: the centred hero stack, the rule of three, Title Case everywhere,
+uniform sentence length.
 
 If the project has a dev server and a way to take headless screenshots
 (Playwright, or the project's own look tests), take a *before* picture of the
@@ -50,7 +63,9 @@ main pages at desktop and phone widths. If it has neither, say that the result
 was not looked at, rather than implying it was.
 
 Report the audit to the user grouped by tell, with counts and the worst few
-file:line examples for each. Do not list every hit.
+file:line examples for each. Do not list every hit. Say which findings are
+near-certain on their own (placeholders, builder badges, chatbot register
+leaking through, starter leftovers) and which only count together.
 
 ## 3. Propose a direction and agree it
 
@@ -101,8 +116,11 @@ Keep these while you edit:
   least as visible.
 - Text contrast of at least 4.5:1, and 3:1 for large text and UI edges.
 - Behaviour. This is a visual pass, so do not change logic, routes or data.
-- Copy. The scanner reports stock phrases, but rewriting them is the user's
+- Copy. The scanner reports stock phrases, buzzword clusters, generic
+  calls to action and stock headings, but rewriting them is the user's
   call. List them and offer rewrites, and do not change them silently.
+  Placeholders, dead links and fake testimonials are different: they are
+  not copy, and the fix is to remove them or the section they sit in.
 - The project's own rules. If its CLAUDE.md names look tests or picture
   baselines, this change is meant to move them, so rewrite them, look at
   every one, and say so.

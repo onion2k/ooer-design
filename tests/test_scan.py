@@ -148,6 +148,9 @@ class Walking(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             os.makedirs(os.path.join(root, "src"))
             os.makedirs(os.path.join(root, "node_modules", "lib"))
+            os.makedirs(os.path.join(root, "dist-test"))
+            with open(os.path.join(root, "dist-test", "x.css"), "w") as f:
+                f.write("a { border-radius: 99px; }\n")
             with open(os.path.join(root, "src", "app.css"), "w") as f:
                 f.write("body {\n  font-family: Inter;\n  background: #faf7f2;\n}\n")
             with open(os.path.join(root, "node_modules", "lib", "x.css"), "w") as f:
