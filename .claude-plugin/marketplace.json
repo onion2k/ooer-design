@@ -1,0 +1,12 @@
+{
+  "name": "ooer",
+  "description": "Christopher's own Claude Code plugins.",
+  "owner": { "name": "Christopher Neale" },
+  "plugins": [
+    {
+      "name": "ooer-design",
+      "source": "./",
+      "description": "Find the stereotypical 'AI design' look in a website, then preview, approve and apply the fixes."
+    }
+  ]
+}
