@@ -55,8 +55,12 @@ export function checkProposals(input) {
     if (blank(decision.title)) throw new Error(`proposals: ${id} needs a 'title'`);
     if (blank(decision.why)) throw new Error(`proposals: ${id} needs a 'why'`);
     if (decision.action === "change") {
-      if (blank(decision.css)) throw new Error(`proposals: ${id} is a change, so it needs the 'css' that previews it`);
       if (blank(decision.proposed)) throw new Error(`proposals: ${id} is a change, so it needs 'proposed'`);
+      if (decision.kind === "text") {
+        if (decision.css !== undefined) throw new Error(`proposals: ${id} is a text change, so it must not carry 'css'`);
+      } else if (blank(decision.css)) {
+        throw new Error(`proposals: ${id} is a change, so it needs the 'css' that previews it`);
+      }
     } else if (decision.css !== undefined) {
       throw new Error(`proposals: ${id} is a keep, so it must not carry 'css'`);
     }
@@ -76,11 +80,17 @@ export function pictureName(page, width, variant) {
   return `${slug(page.name)}-${width}-${variant}.png`;
 }
 
+// A change to words is shown as words, not pictured: a CSS override cannot
+// preview it, and the before and after text says all there is to see.
+export function isPictured(decision) {
+  return decision.action === "change" && decision.kind !== "text";
+}
+
 // Every picture after the before: all the changes together, then each change
 // on its own so its effect can be told apart from the rest. With a single
 // change, all together would be the same picture twice.
 export function pictureSets(proposals) {
-  const changes = proposals.decisions.filter((d) => d.action === "change");
+  const changes = proposals.decisions.filter(isPictured);
   const each = changes.map((d) => ({ variant: d.id, css: d.css }));
   if (changes.length < 2) return each;
   return [{ variant: "all", css: changes.map((d) => d.css).join("\n") }, ...each];
@@ -128,11 +138,22 @@ function comparison(proposals, folder, variant, label, unchanged) {
   return rows.join("");
 }
 
+function textComparison(decision) {
+  return `
+      <div class="words">
+        <blockquote><span>Before</span>${escape(decision.current)}</blockquote>
+        <blockquote><span>After</span>${escape(decision.proposed)}</blockquote>
+      </div>`;
+}
+
 function decisionSection(proposals, folder, decision, number, unchanged) {
   const change = decision.action === "change";
-  const value = change
-    ? `<code>${escape(decision.current)}</code> <span class="arrow" aria-label="becomes">→</span> <code>${escape(decision.proposed)}</code>`
-    : `<code>${escape(decision.current)}</code> stays`;
+  const text = decision.kind === "text";
+  const value = text
+    ? ""
+    : change
+      ? `<code>${escape(decision.current)}</code> <span class="arrow" aria-label="becomes">→</span> <code>${escape(decision.proposed)}</code>`
+      : `<code>${escape(decision.current)}</code> stays`;
   const usedIn = (decision.used_in ?? []).map((f) => `<code>${escape(f)}</code>`).join(", ");
   return `
     <section class="decision ${change ? "change" : "keep"}" id="${escape(decision.id)}">
@@ -141,17 +162,18 @@ function decisionSection(proposals, folder, decision, number, unchanged) {
         <h2>${escape(decision.title)}</h2>
         <span class="action">${change ? "Change" : "Keep"}</span>
       </header>
-      <p class="value">${value}</p>
+      ${value ? `<p class="value">${value}</p>` : ""}
       <p class="why">${escape(decision.why)}</p>
       <dl>
         ${decision.source ? `<dt>Source</dt><dd><code>${escape(decision.source)}</code></dd>` : ""}
         ${usedIn ? `<dt>Used in</dt><dd>${usedIn}</dd>` : ""}
         ${decision.category ? `<dt>Tell</dt><dd>${escape(decision.category)}</dd>` : ""}
       </dl>
-      ${change && pairs(proposals, decision.id).every((p) => unchanged.has(p.name))
+      ${text ? textComparison(decision) : ""}
+      ${isPictured(decision) && pairs(proposals, decision.id).every((p) => unchanged.has(p.name))
         ? `<p class="warning" role="note">No visible difference on any page pictured. Check that its CSS uses the same selector as the rule it overrides, or add a page where it shows.</p>`
         : ""}
-      ${change ? `<div class="pairs">${comparison(proposals, folder, decision.id, "with this change", unchanged)}</div>` : ""}
+      ${isPictured(decision) ? `<div class="pairs">${comparison(proposals, folder, decision.id, "with this change", unchanged)}</div>` : ""}
     </section>`;
 }
 
@@ -160,7 +182,8 @@ export function renderReview(proposals, folder, unchanged = new Set()) {
   const keeps = proposals.decisions.filter((d) => d.action === "keep");
   const title = `Redesign proposals · ${proposals.site ?? proposals.url}`;
   const sections = proposals.decisions.map((d, i) => decisionSection(proposals, folder, d, i + 1, unchanged)).join("");
-  const together = changes.length >= 2
+  const pictured = proposals.decisions.filter(isPictured);
+  const together = pictured.length >= 2
     ? `<section class="together">
       <h2>All changes together</h2>
       <div class="pairs">${comparison(proposals, folder, "all", "with every change", unchanged)}</div>
@@ -233,6 +256,10 @@ export function renderReview(proposals, folder, unchanged = new Set()) {
   .together { border-top-width: 4px; }
   .same p { grid-column: 1 / -1; margin: 0; padding: 12px; border: 1px dashed var(--rule); color: var(--muted); font-size: 15px; }
   .warning { border-left: 4px solid var(--accent); padding: 8px 12px; margin: 0 0 20px; max-width: 64ch; }
+  .words { display: grid; gap: 12px; max-width: 72ch; margin: 12px 0 16px; }
+  .words blockquote { margin: 0; padding: 12px 16px; border: 1px solid var(--rule); font-size: 18px; }
+  .words span { display: block; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 6px; }
+  .words blockquote + blockquote { border-color: var(--ink); }
   .together h2 { margin-bottom: 16px; }
   @media (max-width: 640px) {
     .pair, .pair.narrow { grid-template-columns: 1fr 1fr; }

@@ -197,3 +197,64 @@ test("a change with no visible difference anywhere is flagged", () => {
   const html = renderReview(checkProposals(proposals()), "pictures", unchanged);
   assert.match(html, /class="warning"[^>]*>[^<]*No visible difference on any page/);
 });
+
+function withCopyChange() {
+  const p = proposals();
+  p.decisions.push({
+    id: "hero-copy",
+    title: "Hero line",
+    category: "copy",
+    action: "change",
+    kind: "text",
+    current: "Elevate your workflow, seamlessly.",
+    proposed: "Plan the week in one screen.",
+    why: "Verb cosplay with no object.",
+    source: "src/pages/index.astro",
+  });
+  return p;
+}
+
+test("a text change needs no CSS and is not pictured", () => {
+  const checked = checkProposals(withCopyChange());
+  assert.equal(checked.decisions.length, 3);
+  assert.deepEqual(pictureSets(checked).map((s) => s.variant), ["radius-lg"]);
+});
+
+test("a text change must say what the text becomes", () => {
+  const p = withCopyChange();
+  delete p.decisions[2].proposed;
+  assert.throws(() => checkProposals(p), /hero-copy.*proposed/);
+});
+
+test("a text change must not carry CSS", () => {
+  const p = withCopyChange();
+  p.decisions[2].css = ":root {}";
+  assert.throws(() => checkProposals(p), /hero-copy.*css/);
+});
+
+test("the review page shows a text change as before and after words", () => {
+  const html = renderReview(checkProposals(withCopyChange()), "pictures");
+  const section = html.slice(html.indexOf('id="hero-copy"'));
+  assert.match(section, /Elevate your workflow, seamlessly\./);
+  assert.match(section, /Plan the week in one screen\./);
+  assert.doesNotMatch(section, /<img/);
+  assert.doesNotMatch(section, /No visible difference/);
+});
+
+test("text changes count as changes in the summary", () => {
+  const html = renderReview(checkProposals(withCopyChange()), "pictures");
+  assert.match(html, /2 changes/);
+});
+
+test("a text change with no visible difference is not flagged as invisible", () => {
+  const unchanged = new Set(["home-1280-radius-lg.png", "home-375-radius-lg.png"]);
+  const html = renderReview(checkProposals(withCopyChange()), "pictures", unchanged);
+  const section = html.slice(html.indexOf('id="hero-copy"'));
+  assert.doesNotMatch(section, /class="warning"/);
+});
+
+test("one pictured change beside a text change has no all-together section", () => {
+  const html = renderReview(checkProposals(withCopyChange()), "pictures");
+  assert.doesNotMatch(html, /All changes together/);
+  assert.doesNotMatch(html, /-all\.png/);
+});

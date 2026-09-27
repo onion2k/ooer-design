@@ -58,9 +58,22 @@ One decision is one value at its source, however many lines show it.
    overrule it.
 4. **For each change, choose one concrete replacement,** following the
    "Instead" advice in [tells.md](../polish/tells.md). Never replace a
-   default with another default, such as Inter with DM Sans. Check text
-   contrast (4.5:1, and 3:1 for large text and UI edges) for any colour you
-   propose. Treat the site's own contrast or design gates as the final word.
+   default with another default, such as Inter with DM Sans, or purple with
+   the cream-and-terracotta palette the catalogue says is the next default.
+   Check text contrast (4.5:1, and 3:1 for large text and UI edges) for any
+   colour you propose. Treat the site's own contrast or design gates as the
+   final word.
+5. **Content findings are text changes, not CSS.** A placeholder, a dead
+   link, a fake testimonial, a fabricated statistic, a generic call to
+   action, a stock heading or a generated-sounding phrase is proposed with
+   `"kind": "text"`, its `current` words and its `proposed` words. For a
+   placeholder or a fake testimonial, the proposal is usually to remove the
+   element or the section, and `proposed` says so. For copy, propose one
+   rewrite that says the specific thing to the one audience, and expect the
+   user to amend it: the words are theirs. A buzzword cluster is one
+   decision for the file, with the words listed and a rewrite offered for
+   the worst lines. Scaffolding, starter leftovers and builder badges are
+   text changes too, with `proposed` as "remove".
 
 ## 3. Write the proposals file
 
@@ -90,6 +103,17 @@ Write `proposals.json` in the scratchpad, not in the site:
       "css": ":root { --radius-lg: 3px; }"
     },
     {
+      "id": "hero-line",
+      "title": "Hero line",
+      "category": "copy",
+      "action": "change",
+      "kind": "text",
+      "current": "Elevate your workflow, seamlessly.",
+      "proposed": "Plan the week in one screen.",
+      "why": "Verb cosplay with no object; the rewrite says what it does.",
+      "source": "src/pages/index.astro"
+    },
+    {
       "id": "antiquity-ground",
       "title": "Antiquity paper colour",
       "category": "beige",
@@ -116,7 +140,10 @@ Write `proposals.json` in the scratchpad, not in the site:
 - **`hide`:** anything that covers the page and is not part of the design.
   Dev-server toolbars are hidden already.
 - **`id`:** lower-case letters, digits and hyphens.
-- A `change` needs `css` and `proposed`. A `keep` needs `why` and no `css`.
+- A `change` needs `proposed`, and `css` unless it is `"kind": "text"`, in
+  which case `current` and `proposed` are the words before and after and
+  the review page shows them side by side instead of pictures. A `keep`
+  needs `why` and no `css`.
 
 ## 4. Preview and review
 
@@ -156,7 +183,9 @@ All at once, and in this order:
    the `source` of the decision. Then rebuild the generated files with the
    project's own command, and never edit a generated file by hand. Where a
    value is hard-coded in components, as in `rounded-2xl` or `#faf7f2`,
-   replace it with the token, not with another literal.
+   replace it with the token, not with another literal. Apply each text
+   change exactly as approved, word for word: if the user amended the
+   words on the review page, those are the words.
 2. **Record the keeps.** Add each approved keep to `.ooer-design.json` at
    the site's root, with the `match` exactly as the scanner reported it, the
    `file` it is in, and the `why` as the `reason`. Add any agreed `exclude`
