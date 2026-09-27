@@ -1,10 +1,16 @@
 # ooer-design
 
 This is a Claude Code plugin that polishes a website's design so it stops
-looking AI-generated. It finds beige and cream palettes, Inter and the other
-default fonts, large rounded corners, purple gradients, soft floating shadows,
-frosted glass and stock hero copy. It then proposes a considered direction and
-applies it at the design-token level.
+looking AI-generated. Its scanner finds the tells in some thirty categories:
+the indigo accent and the purple gradient, Inter and the fonts that stand in
+for it, cream and terracotta, one radius on everything, glows and glass and
+blur blobs, the pill badge and the eyebrow label, the three-card grid and the
+stock section order, fade-up on everything, placeholders and dead links, fake
+testimonials and fabricated statistics, generic calls to action, and the
+words generators write in. The catalogue behind it, with its sources, is in
+[skills/polish/tells.md](skills/polish/tells.md). The skills then propose a
+considered direction and apply it at the design-token level, or walk every
+finding through a review page you approve first.
 
 ## Use
 
@@ -19,9 +25,10 @@ The plugin has two skills. Run them in a website project:
   Claude also picks it up when you ask it to make a site "look less AI" or
   "less generic".
 - **`redesign`** works through what the audit found. It drafts a change or
-  a keep for every finding, and previews every change as before and after
-  screenshots of your running dev server. It then shows one review page for
-  you to approve. Only after that does it edit the site's real source, which
+  a keep for every finding, and previews every visual change as before and
+  after screenshots of your running dev server; a change to words is shown
+  as the words before and after. It then shows one review page for you to
+  approve. Only after that does it edit the site's real source, which
   includes the files that generated tokens are built from. What you chose to
   keep is recorded in `.ooer-design.json`, so it stops coming back.
 
@@ -47,6 +54,11 @@ A site can have a `.ooer-design.json` at its root, which the scanner reads:
 ```
 
 - A kept finding is listed apart with its reason and is not counted.
+- Most findings are one line. A buzzword cluster (four or more distinct
+  marketing words in a file) and em dash density (five or more) are counted
+  per file and reported once; a site that animates with no reduced-motion
+  guard anywhere is reported once for the site. Their `match` is a fixed
+  label, such as `buzzword cluster`, so one keep covers the file.
 - A keep that no longer matches anything is reported, so old decisions can
   be cleared out.
 - Every keep needs a reason.

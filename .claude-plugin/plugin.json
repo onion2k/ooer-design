@@ -1,7 +1,7 @@
 {
   "name": "ooer-design",
   "displayName": "Ooer Design",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Polish a website's design by finding and replacing the stereotypical 'AI design' look: beige and cream palettes, Inter everywhere, big rounded corners, purple gradients and soft shadows. Audit with polish; preview, approve and apply the fixes with redesign.",
   "author": { "name": "Christopher Neale" },
   "license": "UNLICENSED",
